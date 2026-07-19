@@ -2,13 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>VibeCode Мессенджер</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCode · Вход</title>
     <style>
         * {
             margin: 0;
@@ -16,7 +11,6 @@
             box-sizing: border-box;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-
         body {
             background: #0a0a0a;
             display: flex;
@@ -24,575 +18,326 @@
             align-items: center;
             min-height: 100vh;
         }
-
-        .app-container {
+        .auth-container {
             width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            max-height: 800px;
+            max-width: 420px;
+            padding: 40px 24px;
+        }
+        .auth-card {
             background: #1c1c1e;
             border-radius: 32px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
-            position: relative;
+            padding: 40px 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
-
-        /* ЭКРАН ВХОДА */
-        #authScreen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 40px 24px;
-            background: linear-gradient(145deg, #1c1c1e, #2a2a2d);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        .auth-logo {
+            font-size: 52px;
+            text-align: center;
+            margin-bottom: 4px;
         }
-
-        #authScreen.hidden {
-            display: none;
-        }
-
-        .logo {
-            font-size: 48px;
-            font-weight: 700;
+        .auth-card h1 {
             color: #fff;
             text-align: center;
-            margin-bottom: 8px;
-            letter-spacing: -1px;
+            font-size: 28px;
+            font-weight: 700;
         }
-        .logo span { color: #4f8cff; }
-        .sub-logo {
-            text-align: center;
+        .auth-card p {
             color: #8e8e93;
-            margin-bottom: 40px;
+            text-align: center;
             font-size: 14px;
+            margin-bottom: 32px;
         }
-
-        .auth-input {
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            color: #8e8e93;
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
             background: #2c2c2e;
             border: none;
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 14px;
+            border-radius: 14px;
             color: #fff;
             font-size: 16px;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-        .auth-input:focus {
+        .form-group input:focus {
             outline: none;
             background: #3a3a3c;
             transform: scale(1.01);
         }
-        .auth-input::placeholder { color: #8e8e93; }
-
+        .form-group input::placeholder {
+            color: #6c6c70;
+        }
         .btn-primary {
+            width: 100%;
+            padding: 16px;
             background: #4f8cff;
             color: #fff;
             border: none;
-            border-radius: 16px;
-            padding: 16px;
+            border-radius: 14px;
             font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
+            transition: 0.2s;
         }
-        .btn-primary:active { transform: scale(0.96); }
+        .btn-primary:active {
+            transform: scale(0.96);
+        }
         .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-
         .btn-google {
-            background: #ffffff;
+            width: 100%;
+            padding: 16px;
+            background: #fff;
             color: #1c1c1e;
             border: 1px solid #3a3a3c;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+        }
+        .btn-google:active {
+            transform: scale(0.96);
         }
         .btn-google img {
             width: 20px;
             height: 20px;
         }
-
-        .divider {
+        .auth-divider {
             text-align: center;
-            color: #8e8e93;
-            margin: 16px 0;
+            color: #6c6c70;
             font-size: 13px;
+            margin: 20px 0;
             position: relative;
         }
-        .divider::before,
-        .divider::after {
+        .auth-divider::before,
+        .auth-divider::after {
             content: '';
             position: absolute;
             top: 50%;
-            width: 30%;
+            width: 35%;
             height: 1px;
             background: #2c2c2e;
         }
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
-
+        .auth-divider::before {
+            left: 0;
+        }
+        .auth-divider::after {
+            right: 0;
+        }
         .auth-switch {
             color: #8e8e93;
             text-align: center;
-            margin-top: 20px;
             font-size: 15px;
+            margin-top: 20px;
         }
         .auth-switch a {
             color: #4f8cff;
             font-weight: 600;
             cursor: pointer;
-            text-decoration: none;
         }
         .auth-error {
             color: #ff4757;
             font-size: 14px;
             text-align: center;
-            margin-top: 10px;
-            min-height: 20px;
+            min-height: 24px;
+            margin-bottom: 12px;
         }
-
-        /* ЭКРАН ЧАТА */
-        #chatScreen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #0f0f11;
-            animation: fadeIn 0.4s ease;
-        }
-        #chatScreen.hidden { display: none; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-header {
-            padding: 16px 20px;
-            background: #1c1c1e;
-            border-bottom: 1px solid #2c2c2e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .chat-header h2 {
-            color: #fff;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .chat-header .logout-btn {
-            background: none;
-            border: none;
-            color: #8e8e93;
-            font-size: 22px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .chat-header .logout-btn:active { transform: rotate(90deg); }
-
-        #messagesList {
-            flex: 1;
-            padding: 16px 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            scroll-behavior: smooth;
-        }
-        #messagesList::-webkit-scrollbar { width: 4px; }
-        #messagesList::-webkit-scrollbar-track { background: transparent; }
-        #messagesList::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 10px; }
-
-        .message-item {
-            max-width: 80%;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 15px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            animation: messageSlide 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes messageSlide {
-            from { opacity: 0; transform: scale(0.9) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .message-item.mine {
-            align-self: flex-end;
-            background: #4f8cff;
-            color: #fff;
-            border-bottom-right-radius: 4px;
-        }
-        .message-item.other {
-            align-self: flex-start;
-            background: #2c2c2e;
-            color: #fff;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-meta {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 4px;
-            font-size: 11px;
-            color: rgba(255,255,255,0.5);
-        }
-        .message-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #3a3a3c;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .auth-version {
+            text-align: center;
+            color: #4a4a4d;
             font-size: 12px;
-            font-weight: 600;
-            color: #fff;
-            flex-shrink: 0;
+            margin-top: 20px;
         }
-        .message-avatar.mine-avatar { background: #4f8cff; }
-
-        .chat-input-area {
-            padding: 12px 16px;
-            background: #1c1c1e;
-            border-top: 1px solid #2c2c2e;
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        .hidden {
+            display: none !important;
         }
-        .chat-input-area input {
-            flex: 1;
-            background: #2c2c2e;
-            border: none;
-            border-radius: 24px;
-            padding: 12px 18px;
-            color: #fff;
-            font-size: 16px;
-            transition: 0.2s;
-        }
-        .chat-input-area input:focus {
-            outline: none;
-            background: #3a3a3c;
-        }
-        .chat-input-area button {
-            background: #4f8cff;
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .chat-input-area button:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">⚡</div>
+            <h1>VibeCode</h1>
+            <p>Защищённый мессенджер</p>
 
-    <!-- ===== ЭКРАН АВТОРИЗАЦИИ ===== -->
-    <div id="authScreen">
-        <div class="logo"><span>⚡</span>VibeCode</div>
-        <div class="sub-logo">Защищённый анонимный чат</div>
-        
-        <input type="email" id="emailInput" class="auth-input" placeholder="Электронная почта" autocomplete="email">
-        <input type="password" id="passInput" class="auth-input" placeholder="Пароль" autocomplete="current-password">
-        
-        <button id="authBtn" class="btn-primary">Войти</button>
-        <div id="authError" class="auth-error"></div>
+            <div id="authError" class="auth-error"></div>
 
-        <div class="divider">или</div>
+            <form id="authForm" autocomplete="off">
+                <div class="form-group">
+                    <label>Электронная почта</label>
+                    <input type="email" id="emailInput" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="passInput" placeholder="••••••••" required minlength="6">
+                </div>
+                <button type="submit" id="authBtn" class="btn-primary">Войти</button>
+            </form>
 
-        <button id="googleBtn" class="btn-primary btn-google">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-            Войти через Google
-        </button>
-        
-        <div class="auth-switch">
-            <span id="toggleText">Нет аккаунта?</span> 
-            <a id="toggleLink">Создать</a>
-        </div>
-    </div>
+            <div class="auth-divider">или</div>
 
-    <!-- ===== ЭКРАН ЧАТА ===== -->
-    <div id="chatScreen" class="hidden">
-        <div class="chat-header">
-            <h2>💬 Общий чат</h2>
-            <button class="logout-btn" id="logoutBtn">⏻</button>
-        </div>
-        <div id="messagesList"></div>
-        <div class="chat-input-area">
-            <input type="text" id="msgInput" placeholder="Сообщение..." autocomplete="off">
-            <button id="sendBtn">➤</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // ============================================================
-    // 1. ВАШ КОНФИГ FIREBASE (УЖЕ ВСТАВЛЕН)
-    // ============================================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyCEi-fbD7oAwFgWuViRqPYwnlD1FtszaR8",
-        authDomain: "vibecode-messager.firebaseapp.com",
-        projectId: "vibecode-messager",
-        storageBucket: "vibecode-messager.firebasestorage.app",
-        messagingSenderId: "280825499576",
-        appId: "1:280825499576:web:e84a68f1e9d9255f21094d",
-        measurementId: "G-39CT6S60ST"
-    };
-
-    // Инициализация Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    // ============================================================
-    // 2. DOM-ЭЛЕМЕНТЫ
-    // ============================================================
-    const authScreen = document.getElementById('authScreen');
-    const chatScreen = document.getElementById('chatScreen');
-    const emailInput = document.getElementById('emailInput');
-    const passInput = document.getElementById('passInput');
-    const authBtn = document.getElementById('authBtn');
-    const authError = document.getElementById('authError');
-    const toggleLink = document.getElementById('toggleLink');
-    const toggleText = document.getElementById('toggleText');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const googleBtn = document.getElementById('googleBtn');
-
-    const messagesList = document.getElementById('messagesList');
-    const msgInput = document.getElementById('msgInput');
-    const sendBtn = document.getElementById('sendBtn');
-
-    let isLoginMode = true;
-
-    // ============================================================
-    // 3. UI ФУНКЦИИ
-    // ============================================================
-    function showAuthScreen() {
-        authScreen.classList.remove('hidden');
-        chatScreen.classList.add('hidden');
-    }
-
-    function showChatScreen() {
-        authScreen.classList.add('hidden');
-        chatScreen.classList.remove('hidden');
-        setTimeout(() => msgInput.focus(), 400);
-    }
-
-    function setError(msg) {
-        authError.textContent = msg;
-    }
-
-    function updateToggle() {
-        if (isLoginMode) {
-            toggleText.textContent = 'Нет аккаунта?';
-            toggleLink.textContent = 'Создать';
-            authBtn.textContent = 'Войти';
-        } else {
-            toggleText.textContent = 'Уже есть аккаунт?';
-            toggleLink.textContent = 'Войти';
-            authBtn.textContent = 'Зарегистрироваться';
-        }
-        setError('');
-    }
-
-    toggleLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        isLoginMode = !isLoginMode;
-        updateToggle();
-    });
-
-    // ============================================================
-    // 4. ВХОД ПО ПОЧТЕ/ПАРОЛЮ
-    // ============================================================
-    async function handleAuth() {
-        const email = emailInput.value.trim();
-        const pass = passInput.value.trim();
-        if (!email || pass.length < 6) {
-            setError('Введите почту и пароль (мин. 6 символов)');
-            return;
-        }
-        setError('');
-        authBtn.disabled = true;
-        authBtn.textContent = '⏳';
-
-        try {
-            if (isLoginMode) {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } else {
-                await auth.createUserWithEmailAndPassword(email, pass);
-            }
-        } catch (err) {
-            setError(err.message);
-            authBtn.disabled = false;
-            authBtn.textContent = isLoginMode ? 'Войти' : 'Зарегистрироваться';
-        }
-    }
-
-    authBtn.addEventListener('click', handleAuth);
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !authScreen.classList.contains('hidden')) {
-            handleAuth();
-        }
-    });
-
-    // ============================================================
-    // 5. ВХОД ЧЕРЕЗ GOOGLE
-    // ============================================================
-    googleBtn.addEventListener('click', async () => {
-        setError('');
-        googleBtn.disabled = true;
-        googleBtn.innerHTML = '⏳ Загрузка...';
-
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            await auth.signInWithPopup(provider);
-        } catch (err) {
-            if (err.code !== 'auth/popup-closed-by-user') {
-                setError('Ошибка: ' + err.message);
-            }
-            googleBtn.disabled = false;
-            googleBtn.innerHTML = `
+            <button id="googleBtn" class="btn-google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
                 Войти через Google
-            `;
-        }
-    });
+            </button>
 
-    // ============================================================
-    // 6. СЛЕДИМ ЗА ПОЛЬЗОВАТЕЛЕМ
-    // ============================================================
-    auth.onAuthStateChanged((user) => {
-        // Сбрасываем кнопки
-        authBtn.disabled = false;
-        authBtn.textContent = isLoginMode ? 'Войти' : 'Зарегистрироваться';
-        googleBtn.disabled = false;
-        googleBtn.innerHTML = `
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-            Войти через Google
-        `;
+            <p class="auth-switch">
+                <span id="toggleText">Нет аккаунта?</span>
+                <a id="toggleLink">Создать</a>
+            </p>
 
-        if (user) {
-            showChatScreen();
-            listenMessages();
-            emailInput.value = '';
-            passInput.value = '';
-            setError('');
-        } else {
-            showAuthScreen();
-            if (window.unsubscribeMessages) {
-                window.unsubscribeMessages();
-                window.unsubscribeMessages = null;
+            <p class="auth-version">🔒 HTTPS · Защищено</p>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+    </script>
+
+    <script>
+        // ============================================
+        // FIREBASE КОНФИГ
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEi-fbD7oAwFgWuViRqPYwnlD1FtszaR8",
+            authDomain: "vibecode-messager.firebaseapp.com",
+            projectId: "vibecode-messager",
+            storageBucket: "vibecode-messager.firebasestorage.app",
+            messagingSenderId: "280825499576",
+            appId: "1:280825499576:web:e84a68f1e9d9255f21094d",
+            measurementId: "G-39CT6S60ST"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // DOM
+        // ============================================
+        const authForm = document.getElementById('authForm');
+        const authBtn = document.getElementById('authBtn');
+        const emailInput = document.getElementById('emailInput');
+        const passInput = document.getElementById('passInput');
+        const authError = document.getElementById('authError');
+        const toggleLink = document.getElementById('toggleLink');
+        const toggleText = document.getElementById('toggleText');
+        const googleBtn = document.getElementById('googleBtn');
+
+        let isLoginMode = true;
+
+        // ============================================
+        // ПЕРЕКЛЮЧЕНИЕ
+        // ============================================
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            toggleText.textContent = isLoginMode ? 'Нет аккаунта?' : 'Уже есть аккаунт?';
+            toggleLink.textContent = isLoginMode ? 'Создать' : 'Войти';
+            authBtn.textContent = isLoginMode ? 'Войти' : 'Зарегистрироваться';
+            authError.textContent = '';
+        });
+
+        // ============================================
+        // АВТОРИЗАЦИЯ
+        // ============================================
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            const pass = passInput.value.trim();
+
+            if (!email || pass.length < 6) {
+                authError.textContent = 'Введите почту и пароль (мин. 6 символов)';
+                return;
+            }
+
+            authError.textContent = '';
+            authBtn.disabled = true;
+            authBtn.textContent = '⏳';
+
+            try {
+                let userCredential;
+                if (isLoginMode) {
+                    userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                } else {
+                    userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        email: email,
+                        displayName: email.split('@')[0],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'онлайн',
+                        bio: ''
+                    });
+                }
+                window.location.href = 'chats.html';
+            } catch (err) {
+                authError.textContent = err.message;
+                authBtn.disabled = false;
+                authBtn.textContent = isLoginMode ? 'Войти' : 'Зарегистрироваться';
             }
         }
-    });
 
-    // Выход
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
+        authForm.addEventListener('submit', handleAuth);
 
-    // ============================================================
-    // 7. ОТПРАВКА СООБЩЕНИЙ
-    // ============================================================
-    async function sendMessage() {
-        const text = msgInput.value.trim();
-        if (!text || !auth.currentUser) return;
+        // ============================================
+        // GOOGLE
+        // ============================================
+        googleBtn.addEventListener('click', async () => {
+            googleBtn.disabled = true;
+            googleBtn.innerHTML = '⏳';
 
-        try {
-            await db.collection('messages').add({
-                text: text,
-                uid: auth.currentUser.uid,
-                email: auth.currentUser.email || 'Аноним',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            msgInput.value = '';
-            msgInput.focus();
-        } catch (err) {
-            console.error('Ошибка отправки:', err);
-        }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    msgInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    // ============================================================
-    // 8. ПРОСЛУШКА СООБЩЕНИЙ (В РЕАЛЬНОМ ВРЕМЕНИ)
-    // ============================================================
-    function listenMessages() {
-        if (window.unsubscribeMessages) {
-            window.unsubscribeMessages();
-        }
-
-        const query = db.collection('messages')
-            .orderBy('timestamp', 'asc')
-            .limit(100);
-
-        window.unsubscribeMessages = query.onSnapshot((snapshot) => {
-            messagesList.innerHTML = '';
-
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const isMine = data.uid === auth.currentUser?.uid;
-
-                const div = document.createElement('div');
-                div.className = `message-item ${isMine ? 'mine' : 'other'}`;
-
-                const meta = document.createElement('div');
-                meta.className = 'message-meta';
-
-                const avatar = document.createElement('div');
-                avatar.className = `message-avatar ${isMine ? 'mine-avatar' : ''}`;
-                const letter = data.email ? data.email.charAt(0).toUpperCase() : '?';
-                avatar.textContent = letter;
-
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = data.email || 'Аноним';
-
-                meta.appendChild(avatar);
-                meta.appendChild(nameSpan);
-
-                const textSpan = document.createElement('div');
-                textSpan.textContent = data.text;
-
-                div.appendChild(meta);
-                div.appendChild(textSpan);
-                messagesList.appendChild(div);
-            });
-
-            messagesList.scrollTop = messagesList.scrollHeight;
-        }, (error) => {
-            console.error('Ошибка прослушки:', error);
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
+                const userDoc = await db.collection('users').doc(result.user.uid).get();
+                if (!userDoc.exists) {
+                    await db.collection('users').doc(result.user.uid).set({
+                        email: result.user.email,
+                        displayName: result.user.displayName || result.user.email.split('@')[0],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'онлайн',
+                        bio: ''
+                    });
+                }
+                window.location.href = 'chats.html';
+            } catch (err) {
+                if (err.code !== 'auth/popup-closed-by-user') {
+                    authError.textContent = err.message;
+                }
+                googleBtn.disabled = false;
+                googleBtn.innerHTML =
+                    '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"> Войти через Google';
+            }
         });
-    }
 
-    // ============================================================
-    // 9. ЗАПУСК
-    // ============================================================
-    updateToggle();
-    showAuthScreen();
-
-    console.log('🚀 VibeCode Мессенджер запущен!');
-    console.log('📧 Вход по почте или через Google работают!');
-</script>
+        // ============================================
+        // ПРОВЕРКА: если уже залогинен
+        // ============================================
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                window.location.href = 'chats.html';
+            }
+        });
+    </script>
 
 </body>
 </html>
