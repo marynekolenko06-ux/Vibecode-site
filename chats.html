@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCode · Чаты</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 800px;
+            background: #1c1c1e;
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+        .app-header {
+            padding: 20px 24px 16px;
+            background: #1c1c1e;
+            border-bottom: 1px solid #2c2c2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-left .logo {
+            font-size: 28px;
+        }
+        .header-left h1 {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-right .online-badge {
+            color: #34c759;
+            font-size: 13px;
+            font-weight: 600;
+            background: #2c2c2e;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #8e8e93;
+            font-size: 22px;
+            cursor: pointer;
+            transition: 0.2s;
+            padding: 4px;
+        }
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+        .search-bar {
+            padding: 12px 20px;
+            background: #1c1c1e;
+            border-bottom: 1px solid #2c2c2e;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 18px;
+            background: #2c2c2e;
+            border: none;
+            border-radius: 24px;
+            color: #fff;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+        .search-bar input:focus {
+            outline: none;
+            background: #3a3a3c;
+        }
+        .search-bar input::placeholder {
+            color: #6c6c70;
+        }
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .chat-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-list::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-bottom: 1px solid #1a1a1c;
+        }
+        .chat-item:active {
+            background: #2c2c2e;
+        }
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #3a3a3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            flex-shrink: 0;
+            margin-right: 14px;
+        }
+        .chat-avatar.online {
+            border: 2px solid #34c759;
+        }
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-info .chat-name {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-info .chat-name .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .chat-info .chat-name .status-dot.online {
+            background: #34c759;
+        }
+        .chat-info .chat-name .status-dot.offline {
+            background: #6c6c70;
+        }
+        .chat-info .chat-last {
+            color: #8e8e93;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-meta {
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        .chat-meta .chat-time {
+            color: #6c6c70;
+            font-size: 12px;
+        }
+        .chat-meta .unread-badge {
+            background: #4f8cff;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .loading {
+            color: #6c6c70;
+            text-align: center;
+            padding: 40px;
+            font-size: 15px;
+        }
+        .empty {
+            color: #6c6c70;
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 15px;
+        }
+        .empty .empty-icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+        }
+        .fab-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #4f8cff;
+            color: #fff;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(79, 140, 255, 0.4);
+            transition: 0.2s;
+        }
+        .fab-btn:active {
+            transform: scale(0.9);
+        }
+        .app-container {
+            position: relative;
+        }
+
+        /* Модалка */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 32px;
+            z-index: 10;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #1c1c1e;
+            padding: 32px 28px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 360px;
+        }
+        .modal-box h2 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        .modal-box p {
+            color: #8e8e93;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .modal-box input {
+            width: 100%;
+            padding: 14px 18px;
+            background: #2c2c2e;
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        .modal-box input:focus {
+            outline: none;
+            background: #3a3a3c;
+        }
+        .modal-box .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-box .modal-btns button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-box .modal-btns .btn-create {
+            background: #4f8cff;
+            color: #fff;
+        }
+        .modal-box .modal-btns .btn-cancel {
+            background: #2c2c2e;
+            color: #8e8e93;
+        }
+        .modal-box .modal-btns button:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="app-header">
+            <div class="header-left">
+                <span class="logo">⚡</span>
+                <h1>Чаты</h1>
+            </div>
+            <div class="header-right">
+                <span id="onlineCount" class="online-badge">🟢 0</span>
+                <button id="profileBtn" class="icon-btn">👤</button>
+                <button id="logoutBtn" class="icon-btn">⏻</button>
+            </div>
+        </header>
+
+        <!-- Поиск -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Поиск чатов...">
+        </div>
+
+        <!-- Список -->
+        <div id="chatList" class="chat-list">
+            <div class="loading">Загрузка чатов...</div>
+        </div>
+
+        <!-- Кнопка -->
+        <button id="newChatBtn" class="fab-btn">✚</button>
+
+        <!-- Модалка -->
+        <div id="newChatModal" class="modal-overlay">
+            <div class="modal-box">
+                <h2>Новый чат</h2>
+                <p>Введите email пользователя</p>
+                <input type="email" id="newChatEmail" placeholder="user@example.com">
+                <div class="modal-btns">
+                    <button class="btn-cancel" id="closeModalBtn">Отмена</button>
+                    <button class="btn-create" id="createChatBtn">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+    </script>
+
+    <script>
+        // ============================================
+        // FIREBASE
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEi-fbD7oAwFgWuViRqPYwnlD1FtszaR8",
+            authDomain: "vibecode-messager.firebaseapp.com",
+            projectId: "vibecode-messager",
+            storageBucket: "vibecode-messager.firebasestorage.app",
+            messagingSenderId: "280825499576",
+            appId: "1:280825499576:web:e84a68f1e9d9255f21094d",
+            measurementId: "G-39CT6S60ST"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // DOM
+        // ============================================
+        const chatList = document.getElementById('chatList');
+        const searchInput = document.getElementById('searchInput');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const profileBtn = document.getElementById('profileBtn');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const modal = document.getElementById('newChatModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const createChatBtn = document.getElementById('createChatBtn');
+        const newChatEmail = document.getElementById('newChatEmail');
+        const onlineCount = document.getElementById('onlineCount');
+
+        let currentUser = null;
+        let allChats = [];
+        let unsubscribeChats = null;
+
+        // ============================================
+        // ПРОВЕРКА АВТОРИЗАЦИИ
+        // ============================================
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            loadChats();
+            updateOnlineCount();
+        });
+
+        // ============================================
+        // ВЫХОД
+        // ============================================
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+
+        // ============================================
+        // ПРОФИЛЬ
+        // ============================================
+        profileBtn.addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // ============================================
+        // ЗАГРУЗКА ЧАТОВ
+        // ============================================
+        function loadChats() {
+            if (unsubscribeChats) {
+                unsubscribeChats();
+            }
+
+            chatList.innerHTML = '<div class="loading">Загрузка чатов...</div>';
+
+            const chatsRef = db.collection('chats')
+                .where('participants', 'array-contains', currentUser.uid);
+
+            unsubscribeChats = chatsRef.onSnapshot(async (snapshot) => {
+                allChats = [];
+
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const otherUid = data.participants.find(id => id !== currentUser.uid);
+
+                    const userDoc = await db.collection('users').doc(otherUid).get();
+                    const userData = userDoc.data();
+
+                    const lastMsg = await db.collection('messages')
+                        .where('room', '==', doc.id)
+                        .orderBy('timestamp', 'desc')
+                        .limit(1)
+                        .get();
+
+                    let lastMessage = 'Нет сообщений';
+                    let lastTime = '';
+                    let unread = 0;
+
+                    if (!lastMsg.empty) {
+                        const msg = lastMsg.docs[0].data();
+                        lastMessage = msg.text || 'Сообщение';
+                        lastTime = msg.timestamp?.toDate?.()?.toLocaleTimeString('ru', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) || '';
+                    }
+
+                    const unreadQuery = await db.collection('messages')
+                        .where('room', '==', doc.id)
+                        .where('read', '==', false)
+                        .where('sender', '!=', currentUser.uid)
+                        .get();
+                    unread = unreadQuery.size;
+
+                    allChats.push({
+                        id: doc.id,
+                        otherUid: otherUid,
+                        displayName: userData?.displayName || 'Аноним',
+                        email: userData?.email || 'unknown',
+                        status: userData?.status || 'offline',
+                        lastMessage: lastMessage,
+                        lastTime: lastTime,
+                        unread: unread
+                    });
+                }
+
+                allChats.sort((a, b) => {
+                    if (a.lastTime > b.lastTime) return -1;
+                    if (a.lastTime < b.lastTime) return 1;
+                    return 0;
+                });
+
+                renderChats(allChats);
+            });
+        }
+
+        // ============================================
+        // РЕНДЕР
+        // ============================================
+        function renderChats(chats) {
+            if (chats.length === 0) {
+                chatList.innerHTML = `
+                    <div class="empty">
+                        <span class="empty-icon">💬</span>
+                        Нет чатов<br>
+                        <span style="font-size:13px;color:#6c6c70;">Начните новый чат с другом</span>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            for (const chat of chats) {
+                const initial = chat.displayName.charAt(0).toUpperCase();
+                const statusClass = chat.status === 'онлайн' ? 'online' : 'offline';
+                const unreadBadge = chat.unread > 0 ? `<span class="unread-badge">${chat.unread}</span>` : '';
+
+                html += `
+                    <div class="chat-item" data-uid="${chat.otherUid}" data-room="${chat.id}">
+                        <div class="chat-avatar ${statusClass}">${initial}</div>
+                        <div class="chat-info">
+                            <div class="chat-name">
+                                ${chat.displayName}
+                                <span class="status-dot ${statusClass}"></span>
+                            </div>
+                            <div class="chat-last">${chat.lastMessage}</div>
+                        </div>
+                        <div class="chat-meta">
+                            <div class="chat-time">${chat.lastTime}</div>
+                            ${unreadBadge}
+                        </div>
+                    </div>
+                `;
+            }
+
+            chatList.innerHTML = html;
+
+            // Клик по чату
+            document.querySelectorAll('.chat-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const room = el.dataset.room;
+                    const uid = el.dataset.uid;
+                    window.location.href = `chat.html?room=${room}&uid=${uid}`;
+                });
+            });
+        }
+
+        // ============================================
+        // ПОИСК
+        // ============================================
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allChats.filter(chat =>
+                chat.displayName.toLowerCase().includes(query) ||
+                chat.email.toLowerCase().includes(query)
+            );
+            renderChats(filtered);
+        });
+
+        // ============================================
+        // ОНЛАЙН
+        // ============================================
+        function updateOnlineCount() {
+            db.collection('users')
+                .where('status', '==', 'онлайн')
+                .onSnapshot((snapshot) => {
+                    onlineCount.textContent = `🟢 ${snapshot.size}`;
+                });
+        }
+
+        // ============================================
+        // НОВЫЙ ЧАТ
+        // ============================================
+        newChatBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            newChatEmail.value = '';
+            newChatEmail.focus();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        createChatBtn.addEventListener('click', async () => {
+            const email = newChatEmail.value.trim();
+            if (!email) {
+                alert('Введите email');
+                return;
+            }
+
+            if (email === currentUser.email) {
+                alert('Нельзя создать чат с самим собой');
+                return;
+            }
+
+            try {
+                // Находим пользователя
+                const usersRef = db.collection('users');
+                const query = await usersRef.where('email', '==', email).get();
+
+                if (query.empty) {
+                    alert('Пользователь не найден');
+                    return;
+                }
+
+                const otherUser = query.docs[0];
+                const otherUid = otherUser.id;
+
+                // Проверяем, есть ли уже чат
+                const existing = await db.collection('chats')
+                    .where('participants', '==', [currentUser.uid, otherUid])
+                    .get();
+
+                if (!existing.empty) {
+                    alert('Чат уже существует');
+                    modal.classList.remove('active');
+                    return;
+                }
+
+                // Создаём чат
+                const roomId = [currentUser.uid, otherUid].sort().join('-');
+                await db.collection('chats').doc(roomId).set({
+                    participants: [currentUser.uid, otherUid],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                modal.classList.remove('active');
+                loadChats();
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        });
+
+        // Enter в поле поиска
+        newChatEmail.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                createChatBtn.click();
+            }
+        });
+    </script>
+
+</body>
+</html>
