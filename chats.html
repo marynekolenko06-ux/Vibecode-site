@@ -77,28 +77,6 @@
         .icon-btn:active {
             transform: scale(0.9);
         }
-        .search-bar {
-            padding: 12px 20px;
-            background: #1c1c1e;
-            border-bottom: 1px solid #2c2c2e;
-        }
-        .search-bar input {
-            width: 100%;
-            padding: 12px 18px;
-            background: #2c2c2e;
-            border: none;
-            border-radius: 24px;
-            color: #fff;
-            font-size: 15px;
-            transition: 0.3s;
-        }
-        .search-bar input:focus {
-            outline: none;
-            background: #3a3a3c;
-        }
-        .search-bar input::placeholder {
-            color: #6c6c70;
-        }
         .chat-list {
             flex: 1;
             overflow-y: auto;
@@ -147,21 +125,6 @@
             color: #fff;
             font-size: 16px;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .chat-info .chat-name .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .chat-info .chat-name .status-dot.online {
-            background: #34c759;
-        }
-        .chat-info .chat-name .status-dot.offline {
-            background: #6c6c70;
         }
         .chat-info .chat-last {
             color: #8e8e93;
@@ -178,16 +141,6 @@
         .chat-meta .chat-time {
             color: #6c6c70;
             font-size: 12px;
-        }
-        .chat-meta .unread-badge {
-            background: #4f8cff;
-            color: #fff;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 2px 10px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 4px;
         }
         .loading {
             color: #6c6c70;
@@ -314,12 +267,6 @@
             text-align: center;
             min-height: 20px;
         }
-        .modal-box .searching {
-            color: #4f8cff;
-            font-size: 13px;
-            text-align: center;
-            margin-bottom: 12px;
-        }
     </style>
 </head>
 <body>
@@ -338,11 +285,6 @@
             </div>
         </header>
 
-        <!-- Поиск -->
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="🔍 Поиск чатов...">
-        </div>
-
         <!-- Список -->
         <div id="chatList" class="chat-list">
             <div class="loading">Загрузка чатов...</div>
@@ -356,9 +298,7 @@
             <div class="modal-box">
                 <h2>Новый чат</h2>
                 <p>Введите email пользователя</p>
-                <div id="modalError" class="modal-error"></div>
-                <div id="modalSuccess" class="modal-success"></div>
-                <div id="modalSearching" class="searching" style="display:none;">⏳ Поиск пользователя...</div>
+                <div id="modalMessage" style="color:#ff4757;font-size:13px;text-align:center;min-height:20px;margin-bottom:12px;"></div>
                 <input type="email" id="newChatEmail" placeholder="user@example.com">
                 <div class="modal-btns">
                     <button class="btn-cancel" id="closeModalBtn">Отмена</button>
@@ -398,7 +338,6 @@
         // DOM
         // ============================================
         const chatList = document.getElementById('chatList');
-        const searchInput = document.getElementById('searchInput');
         const logoutBtn = document.getElementById('logoutBtn');
         const profileBtn = document.getElementById('profileBtn');
         const newChatBtn = document.getElementById('newChatBtn');
@@ -407,9 +346,7 @@
         const createChatBtn = document.getElementById('createChatBtn');
         const newChatEmail = document.getElementById('newChatEmail');
         const onlineCount = document.getElementById('onlineCount');
-        const modalError = document.getElementById('modalError');
-        const modalSuccess = document.getElementById('modalSuccess');
-        const modalSearching = document.getElementById('modalSearching');
+        const modalMessage = document.getElementById('modalMessage');
 
         let currentUser = null;
         let allChats = [];
@@ -475,33 +412,23 @@
 
                     let lastMessage = 'Нет сообщений';
                     let lastTime = '';
-                    let unread = 0;
 
                     if (!lastMsg.empty) {
                         const msg = lastMsg.docs[0].data();
                         lastMessage = msg.text || 'Сообщение';
-                        lastTime = msg.timestamp?.toDate?.()?.toLocaleTimeString('ru', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }) || '';
+                        const date = msg.timestamp?.toDate?.();
+                        if (date) {
+                            lastTime = date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+                        }
                     }
-
-                    const unreadQuery = await db.collection('messages')
-                        .where('room', '==', doc.id)
-                        .where('read', '==', false)
-                        .where('sender', '!=', currentUser.uid)
-                        .get();
-                    unread = unreadQuery.size;
 
                     allChats.push({
                         id: doc.id,
                         otherUid: otherUid,
                         displayName: userData?.displayName || 'Аноним',
-                        email: userData?.email || 'unknown',
                         status: userData?.status || 'offline',
                         lastMessage: lastMessage,
-                        lastTime: lastTime,
-                        unread: unread
+                        lastTime: lastTime
                     });
                 }
 
@@ -524,7 +451,7 @@
                     <div class="empty">
                         <span class="empty-icon">💬</span>
                         Нет чатов<br>
-                        <span style="font-size:13px;color:#6c6c70;">Начните новый чат с другом</span>
+                        <span style="font-size:13px;color:#6c6c70;">Нажмите + чтобы начать</span>
                     </div>
                 `;
                 return;
@@ -533,22 +460,17 @@
             let html = '';
             for (const chat of chats) {
                 const initial = chat.displayName.charAt(0).toUpperCase();
-                const statusClass = chat.status === 'онлайн' ? 'online' : 'offline';
-                const unreadBadge = chat.unread > 0 ? `<span class="unread-badge">${chat.unread}</span>` : '';
+                const statusClass = chat.status === 'онлайн' ? 'online' : '';
 
                 html += `
                     <div class="chat-item" data-uid="${chat.otherUid}" data-room="${chat.id}">
                         <div class="chat-avatar ${statusClass}">${initial}</div>
                         <div class="chat-info">
-                            <div class="chat-name">
-                                ${chat.displayName}
-                                <span class="status-dot ${statusClass}"></span>
-                            </div>
+                            <div class="chat-name">${chat.displayName}</div>
                             <div class="chat-last">${chat.lastMessage}</div>
                         </div>
                         <div class="chat-meta">
                             <div class="chat-time">${chat.lastTime}</div>
-                            ${unreadBadge}
                         </div>
                     </div>
                 `;
@@ -566,18 +488,6 @@
         }
 
         // ============================================
-        // ПОИСК
-        // ============================================
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const filtered = allChats.filter(chat =>
-                chat.displayName.toLowerCase().includes(query) ||
-                chat.email.toLowerCase().includes(query)
-            );
-            renderChats(filtered);
-        });
-
-        // ============================================
         // ОНЛАЙН
         // ============================================
         function updateOnlineCount() {
@@ -589,14 +499,12 @@
         }
 
         // ============================================
-        // НОВЫЙ ЧАТ — ИСПРАВЛЕННЫЙ (без индексов)
+        // НОВЫЙ ЧАТ — ПРОСТАЯ ВЕРСИЯ
         // ============================================
         newChatBtn.addEventListener('click', () => {
             modal.classList.add('active');
             newChatEmail.value = '';
-            modalError.textContent = '';
-            modalSuccess.textContent = '';
-            modalSearching.style.display = 'none';
+            modalMessage.textContent = '';
             newChatEmail.focus();
         });
 
@@ -612,25 +520,23 @@
 
         createChatBtn.addEventListener('click', async () => {
             const email = newChatEmail.value.trim().toLowerCase();
-            modalError.textContent = '';
-            modalSuccess.textContent = '';
+            modalMessage.textContent = '';
 
             if (!email) {
-                modalError.textContent = 'Введите email';
+                modalMessage.textContent = '❌ Введите email';
                 return;
             }
 
             if (email === currentUser.email) {
-                modalError.textContent = '❌ Нельзя создать чат с самим собой';
+                modalMessage.textContent = '❌ Нельзя с самим собой';
                 return;
             }
 
-            modalSearching.style.display = 'block';
             createChatBtn.disabled = true;
             createChatBtn.textContent = '⏳';
 
             try {
-                // 🔥 ИЩЕМ ПОЛЬЗОВАТЕЛЯ — ПОЛУЧАЕМ ВСЕХ И ФИЛЬТРУЕМ В ПАМЯТИ
+                // 🔥 ИЩЕМ ПОЛЬЗОВАТЕЛЯ
                 const snapshot = await db.collection('users').get();
                 let foundUser = null;
 
@@ -642,8 +548,7 @@
                 });
 
                 if (!foundUser) {
-                    modalError.textContent = '❌ Пользователь с таким email не найден';
-                    modalSearching.style.display = 'none';
+                    modalMessage.textContent = '❌ Пользователь не найден';
                     createChatBtn.disabled = false;
                     createChatBtn.textContent = 'Создать';
                     return;
@@ -652,12 +557,11 @@
                 const otherUid = foundUser.id;
                 const chatId = [currentUser.uid, otherUid].sort().join('-');
 
-                // Проверяем, есть ли чат
+                // Проверяем чат
                 const chatDoc = await db.collection('chats').doc(chatId).get();
 
                 if (chatDoc.exists) {
-                    modalSuccess.textContent = '✅ Чат уже существует! Переход...';
-                    modalSearching.style.display = 'none';
+                    modalMessage.textContent = '✅ Чат уже есть!';
                     setTimeout(() => {
                         modal.classList.remove('active');
                         window.location.href = `chat.html?room=${chatId}&uid=${otherUid}`;
@@ -665,14 +569,14 @@
                     return;
                 }
 
-                // Создаём чат
+                // Создаём
                 await db.collection('chats').doc(chatId).set({
                     participants: [currentUser.uid, otherUid],
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                modalSuccess.textContent = '✅ Чат создан! Переход...';
-                modalSearching.style.display = 'none';
+                modalMessage.textContent = '✅ Чат создан!';
+                modalMessage.style.color = '#34c759';
 
                 setTimeout(() => {
                     modal.classList.remove('active');
@@ -680,28 +584,17 @@
                 }, 1000);
 
             } catch (err) {
-                modalError.textContent = 'Ошибка: ' + err.message;
-                modalSearching.style.display = 'none';
+                modalMessage.textContent = '❌ Ошибка: ' + err.message;
                 createChatBtn.disabled = false;
                 createChatBtn.textContent = 'Создать';
                 console.error(err);
             }
         });
 
-        // Enter в поле email
+        // Enter
         newChatEmail.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 createChatBtn.click();
-            }
-        });
-
-        // Сброс кнопки при закрытии
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                modal.classList.remove('active');
-                createChatBtn.disabled = false;
-                createChatBtn.textContent = 'Создать';
-                modalSearching.style.display = 'none';
             }
         });
     </script>
