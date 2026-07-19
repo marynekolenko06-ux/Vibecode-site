@@ -29,6 +29,7 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
         }
         .app-header {
             padding: 20px 24px 16px;
@@ -219,6 +220,7 @@
             cursor: pointer;
             box-shadow: 0 8px 24px rgba(79, 140, 255, 0.4);
             transition: 0.2s;
+            z-index: 5;
         }
         .fab-btn:active {
             transform: scale(0.9);
@@ -226,8 +228,6 @@
         .app-container {
             position: relative;
         }
-
-        /* Модалка */
         .modal-overlay {
             position: absolute;
             top: 0;
@@ -300,6 +300,26 @@
         .modal-box .modal-btns button:active {
             transform: scale(0.96);
         }
+        .modal-box .modal-error {
+            color: #ff4757;
+            font-size: 13px;
+            margin-bottom: 12px;
+            text-align: center;
+            min-height: 20px;
+        }
+        .modal-box .modal-success {
+            color: #34c759;
+            font-size: 13px;
+            margin-bottom: 12px;
+            text-align: center;
+            min-height: 20px;
+        }
+        .modal-box .searching {
+            color: #4f8cff;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
@@ -336,6 +356,9 @@
             <div class="modal-box">
                 <h2>Новый чат</h2>
                 <p>Введите email пользователя</p>
+                <div id="modalError" class="modal-error"></div>
+                <div id="modalSuccess" class="modal-success"></div>
+                <div id="modalSearching" class="searching" style="display:none;">⏳ Поиск пользователя...</div>
                 <input type="email" id="newChatEmail" placeholder="user@example.com">
                 <div class="modal-btns">
                     <button class="btn-cancel" id="closeModalBtn">Отмена</button>
@@ -384,6 +407,9 @@
         const createChatBtn = document.getElementById('createChatBtn');
         const newChatEmail = document.getElementById('newChatEmail');
         const onlineCount = document.getElementById('onlineCount');
+        const modalError = document.getElementById('modalError');
+        const modalSuccess = document.getElementById('modalSuccess');
+        const modalSearching = document.getElementById('modalSearching');
 
         let currentUser = null;
         let allChats = [];
@@ -530,7 +556,6 @@
 
             chatList.innerHTML = html;
 
-            // Клик по чату
             document.querySelectorAll('.chat-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const room = el.dataset.room;
@@ -564,11 +589,14 @@
         }
 
         // ============================================
-        // НОВЫЙ ЧАТ
+        // НОВЫЙ ЧАТ — ИСПРАВЛЕННЫЙ (без индексов)
         // ============================================
         newChatBtn.addEventListener('click', () => {
             modal.classList.add('active');
             newChatEmail.value = '';
+            modalError.textContent = '';
+            modalSuccess.textContent = '';
+            modalSearching.style.display = 'none';
             newChatEmail.focus();
         });
 
@@ -583,60 +611,97 @@
         });
 
         createChatBtn.addEventListener('click', async () => {
-            const email = newChatEmail.value.trim();
+            const email = newChatEmail.value.trim().toLowerCase();
+            modalError.textContent = '';
+            modalSuccess.textContent = '';
+
             if (!email) {
-                alert('Введите email');
+                modalError.textContent = 'Введите email';
                 return;
             }
 
             if (email === currentUser.email) {
-                alert('Нельзя создать чат с самим собой');
+                modalError.textContent = '❌ Нельзя создать чат с самим собой';
                 return;
             }
 
-            try {
-                // Находим пользователя
-                const usersRef = db.collection('users');
-                const query = await usersRef.where('email', '==', email).get();
+            modalSearching.style.display = 'block';
+            createChatBtn.disabled = true;
+            createChatBtn.textContent = '⏳';
 
-                if (query.empty) {
-                    alert('Пользователь не найден');
+            try {
+                // 🔥 ИЩЕМ ПОЛЬЗОВАТЕЛЯ — ПОЛУЧАЕМ ВСЕХ И ФИЛЬТРУЕМ В ПАМЯТИ
+                const snapshot = await db.collection('users').get();
+                let foundUser = null;
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.email && data.email.toLowerCase() === email) {
+                        foundUser = { id: doc.id, data: data };
+                    }
+                });
+
+                if (!foundUser) {
+                    modalError.textContent = '❌ Пользователь с таким email не найден';
+                    modalSearching.style.display = 'none';
+                    createChatBtn.disabled = false;
+                    createChatBtn.textContent = 'Создать';
                     return;
                 }
 
-                const otherUser = query.docs[0];
-                const otherUid = otherUser.id;
+                const otherUid = foundUser.id;
+                const chatId = [currentUser.uid, otherUid].sort().join('-');
 
-                // Проверяем, есть ли уже чат
-                const existing = await db.collection('chats')
-                    .where('participants', '==', [currentUser.uid, otherUid])
-                    .get();
+                // Проверяем, есть ли чат
+                const chatDoc = await db.collection('chats').doc(chatId).get();
 
-                if (!existing.empty) {
-                    alert('Чат уже существует');
-                    modal.classList.remove('active');
+                if (chatDoc.exists) {
+                    modalSuccess.textContent = '✅ Чат уже существует! Переход...';
+                    modalSearching.style.display = 'none';
+                    setTimeout(() => {
+                        modal.classList.remove('active');
+                        window.location.href = `chat.html?room=${chatId}&uid=${otherUid}`;
+                    }, 1000);
                     return;
                 }
 
                 // Создаём чат
-                const roomId = [currentUser.uid, otherUid].sort().join('-');
-                await db.collection('chats').doc(roomId).set({
+                await db.collection('chats').doc(chatId).set({
                     participants: [currentUser.uid, otherUid],
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                modal.classList.remove('active');
-                loadChats();
+                modalSuccess.textContent = '✅ Чат создан! Переход...';
+                modalSearching.style.display = 'none';
+
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    window.location.href = `chat.html?room=${chatId}&uid=${otherUid}`;
+                }, 1000);
 
             } catch (err) {
-                alert('Ошибка: ' + err.message);
+                modalError.textContent = 'Ошибка: ' + err.message;
+                modalSearching.style.display = 'none';
+                createChatBtn.disabled = false;
+                createChatBtn.textContent = 'Создать';
+                console.error(err);
             }
         });
 
-        // Enter в поле поиска
+        // Enter в поле email
         newChatEmail.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 createChatBtn.click();
+            }
+        });
+
+        // Сброс кнопки при закрытии
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                createChatBtn.disabled = false;
+                createChatBtn.textContent = 'Создать';
+                modalSearching.style.display = 'none';
             }
         });
     </script>
