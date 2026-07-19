@@ -91,4 +91,475 @@
             gap: 6px;
             scroll-behavior: smooth;
         }
-        .messages-container::-webkit-scroll
+        .messages-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+        .msg {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: slideIn 0.2s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .msg.mine {
+            align-self: flex-end;
+            background: #4f8cff;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.other {
+            align-self: flex-start;
+            background: #2c2c2e;
+            color: #fff;
+            border-bottom-left-radius: 4px;
+        }
+        .msg .msg-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .msg .msg-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+        .msg .msg-meta .avatar-small {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3a3a3c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .msg .msg-meta .avatar-small.mine-avatar {
+            background: #4f8cff;
+        }
+        .input-area {
+            padding: 12px 16px;
+            background: #1c1c1e;
+            border-top: 1px solid #2c2c2e;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            background: #2c2c2e;
+            border: none;
+            border-radius: 24px;
+            color: #fff;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .input-area input:focus {
+            outline: none;
+            background: #3a3a3c;
+        }
+        .input-area input::placeholder {
+            color: #6c6c70;
+        }
+        .input-area button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #4f8cff;
+            color: #fff;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .input-area button:active {
+            transform: scale(0.9);
+        }
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .empty-chat {
+            color: #6c6c70;
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            justify-content: center;
+        }
+        .empty-chat .icon {
+            font-size: 48px;
+        }
+        .loading-msgs {
+            color: #6c6c70;
+            text-align: center;
+            padding: 40px;
+            font-size: 14px;
+        }
+        .typing-indicator {
+            color: #8e8e93;
+            font-size: 13px;
+            padding: 4px 16px;
+            font-style: italic;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="chat-header">
+            <button class="back-btn" id="backBtn">‹</button>
+            <div class="avatar" id="chatAvatar">?</div>
+            <div class="info">
+                <div class="name" id="chatName">Загрузка...</div>
+                <div class="status" id="chatStatus">...</div>
+            </div>
+        </header>
+
+        <!-- Сообщения -->
+        <div id="messagesContainer" class="messages-container">
+            <div class="loading-msgs">Загрузка сообщений...</div>
+        </div>
+
+        <!-- Индикатор печатает -->
+        <div id="typingIndicator" class="typing-indicator" style="display:none;">✍️ печатает...</div>
+
+        <!-- Ввод -->
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Сообщение..." autocomplete="off">
+            <button id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+    </script>
+
+    <script>
+        // ============================================
+        // FIREBASE
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEi-fbD7oAwFgWuViRqPYwnlD1FtszaR8",
+            authDomain: "vibecode-messager.firebaseapp.com",
+            projectId: "vibecode-messager",
+            storageBucket: "vibecode-messager.firebasestorage.app",
+            messagingSenderId: "280825499576",
+            appId: "1:280825499576:web:e84a68f1e9d9255f21094d",
+            measurementId: "G-39CT6S60ST"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ============================================
+        // ПОЛУЧАЕМ ПАРАМЕТРЫ ИЗ URL
+        // ============================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        const otherUid = urlParams.get('uid');
+
+        if (!roomId || !otherUid) {
+            window.location.href = 'chats.html';
+        }
+
+        // ============================================
+        // DOM
+        // ============================================
+        const messagesContainer = document.getElementById('messagesContainer');
+        const msgInput = document.getElementById('msgInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const backBtn = document.getElementById('backBtn');
+        const chatName = document.getElementById('chatName');
+        const chatStatus = document.getElementById('chatStatus');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        let currentUser = null;
+        let otherUserData = null;
+        let unsubscribeMessages = null;
+        let unsubscribeTyping = null;
+
+        // ============================================
+        // ПРОВЕРКА АВТОРИЗАЦИИ
+        // ============================================
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            await loadOtherUser();
+            listenMessages();
+            listenTyping();
+        });
+
+        // ============================================
+        // ЗАГРУЗКА ДАННЫХ СОБЕСЕДНИКА
+        // ============================================
+        async function loadOtherUser() {
+            try {
+                const doc = await db.collection('users').doc(otherUid).get();
+                if (doc.exists) {
+                    otherUserData = doc.data();
+                    chatName.textContent = otherUserData.displayName || 'Аноним';
+                    chatAvatar.textContent = otherUserData.displayName?.charAt(0).toUpperCase() || '?';
+                    updateStatus(otherUserData.status);
+                }
+            } catch (err) {
+                console.error('Ошибка загрузки:', err);
+            }
+        }
+
+        function updateStatus(status) {
+            if (status === 'онлайн') {
+                chatStatus.textContent = '🟢 онлайн';
+                chatStatus.className = 'status online';
+                chatAvatar.className = 'avatar online';
+            } else {
+                chatStatus.textContent = '⚪ офлайн';
+                chatStatus.className = 'status';
+                chatAvatar.className = 'avatar';
+            }
+        }
+
+        // Следим за статусом собеседника
+        db.collection('users').doc(otherUid)
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.status !== otherUserData?.status) {
+                        updateStatus(data.status);
+                        otherUserData = data;
+                    }
+                }
+            });
+
+        // ============================================
+        // ЗАГРУЗКА СООБЩЕНИЙ
+        // ============================================
+        function listenMessages() {
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+            }
+
+            messagesContainer.innerHTML = '<div class="loading-msgs">Загрузка...</div>';
+
+            const q = db.collection('messages')
+                .where('room', '==', roomId)
+                .orderBy('timestamp', 'asc')
+                .limit(200);
+
+            unsubscribeMessages = q.onSnapshot((snapshot) => {
+                if (snapshot.empty) {
+                    messagesContainer.innerHTML = `
+                        <div class="empty-chat">
+                            <span class="icon">💬</span>
+                            Нет сообщений<br>
+                            <span style="font-size:13px;color:#6c6c70;">Напишите первое сообщение</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                let lastSender = '';
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const isMine = data.sender === currentUser.uid;
+
+                    // Отмечаем как прочитанное
+                    if (!isMine && !data.read) {
+                        db.collection('messages').doc(doc.id).update({
+                            read: true
+                        });
+                    }
+
+                    const time = data.timestamp?.toDate?.()?.toLocaleTimeString('ru', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) || '';
+
+                    const showMeta = data.sender !== lastSender;
+                    lastSender = data.sender;
+
+                    let metaHtml = '';
+                    if (showMeta) {
+                        const senderData = isMine ?
+                            { displayName: 'Вы', uid: currentUser.uid } :
+                            otherUserData;
+                        const initial = senderData?.displayName?.charAt(0).toUpperCase() || '?';
+                        const avatarClass = isMine ? 'mine-avatar' : '';
+                        metaHtml = `
+                            <div class="msg-meta">
+                                <span class="avatar-small ${avatarClass}">${initial}</span>
+                                ${senderData?.displayName || 'Аноним'}
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="msg ${isMine ? 'mine' : 'other'}">
+                            ${metaHtml}
+                            ${data.text}
+                            <div class="msg-time">${time}</div>
+                        </div>
+                    `;
+                });
+
+                messagesContainer.innerHTML = html;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            }, (err) => {
+                console.error('Ошибка загрузки:', err);
+                messagesContainer.innerHTML = '<div class="loading-msgs">Ошибка загрузки</div>';
+            });
+        }
+
+        // ============================================
+        // ОТПРАВКА
+        // ============================================
+        async function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text || !currentUser) return;
+
+            sendBtn.disabled = true;
+
+            try {
+                await db.collection('messages').add({
+                    room: roomId,
+                    text: text,
+                    sender: currentUser.uid,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    read: false
+                });
+                msgInput.value = '';
+                msgInput.focus();
+            } catch (err) {
+                alert('Ошибка отправки: ' + err.message);
+            }
+
+            sendBtn.disabled = false;
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        msgInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // ============================================
+        // ПЕЧАТАЕТ...
+        // ============================================
+        let typingTimeout = null;
+        let isTyping = false;
+
+        msgInput.addEventListener('input', () => {
+            if (!currentUser) return;
+
+            if (!isTyping) {
+                isTyping = true;
+                db.collection('typing').doc(roomId).set({
+                    [currentUser.uid]: true
+                }, { merge: true });
+            }
+
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                db.collection('typing').doc(roomId).update({
+                    [currentUser.uid]: false
+                });
+            }, 2000);
+        });
+
+        function listenTyping() {
+            if (unsubscribeTyping) {
+                unsubscribeTyping();
+            }
+
+            unsubscribeTyping = db.collection('typing').doc(roomId)
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data[otherUid]) {
+                            typingIndicator.style.display = 'block';
+                        } else {
+                            typingIndicator.style.display = 'none';
+                        }
+                    } else {
+                        typingIndicator.style.display = 'none';
+                    }
+                });
+        }
+
+        // ============================================
+        // НАЗАД
+        // ============================================
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'chats.html';
+        });
+
+        // ============================================
+        // ОБНОВЛЕНИЕ СТАТУСА ПРИ УХОДЕ
+        // ============================================
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                db.collection('typing').doc(roomId).update({
+                    [currentUser.uid]: false
+                }).catch(() => {});
+            }
+        });
+    </script>
+
+</body>
+</html>
